@@ -1,0 +1,11 @@
+namespace CloudantDotNet.Models
+{
+	 public class DeviceList
+    {
+        public string Device { get; set; }
+        public string DeviceType { get; set; }
+        public string Class { get; set; }
+        public bool Connected { get; set; }
+
+    }
+}

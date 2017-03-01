@@ -1,0 +1,87 @@
+namespace CloudantDotNet.Common
+{
+public class ApiClient
+    {
+        private string apiKey, authToken, orgId;
+        private static string BaseURL = "https://{0}.internetofthings.ibmcloud.com/api/v0002";
+        private static string Device = "/device/types/{0}/devices";
+        private static string BulkGet = "/bulk/devices";
+
+        public ApiClient(string apiKey, string authToken)
+        {
+            if (apiKey.Split('-').Length > 0)
+            {
+                this.apiKey = apiKey;
+                this.authToken = authToken;
+                this.orgId = apiKey.Split('-')[1];
+            }
+            else {
+                throw new Exception("Invalid api key");
+            }
+        }
+
+        protected dynamic RestHandler(string methord, string urlSuffix, object param, bool isJsonResponce)
+        {   //,bool validResponceCode){
+
+            string url = string.Format(BaseURL, orgId);
+            url = url + urlSuffix;
+            bool isQuerry = false;
+            if (methord == "GET" && param is string)
+            {
+                url += param;
+                isQuerry = true;
+            }
+            System.Net.WebRequest request = WebRequest.Create(url);
+            request.Method = methord;
+            byte[] credentialBuffer = new UTF8Encoding().GetBytes(apiKey + ":" + authToken);
+            request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(credentialBuffer);
+            request.PreAuthenticate = true;
+            request.Timeout = /*Timeout == null ?*/  100000;//:Timeout;
+            //log.Info("Request " + methord + "  " + url);
+
+            if (param != null & !isQuerry)
+            {
+                request.ContentType = "application/json";
+
+                using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+                {
+                    string json = new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(param);
+                    //log.Info("Request Json " + json);
+
+                    streamWriter.Write(json);
+                    streamWriter.Flush();
+                    streamWriter.Close();
+                }
+            }
+            // Get the response.
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            int responseCode = (int)response.StatusCode;
+            //log.Info("responce " + response.ResponseUri + "  " + responseCode);
+
+            using (var responseStream = response.GetResponseStream())
+            {
+                if (responseStream != null)
+                    using (var reader = new StreamReader(responseStream))
+                    {
+                        var JsonResponce = reader.ReadToEnd();
+                        if (isJsonResponce)
+                        {
+                            return new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<dynamic>(JsonResponce);
+                        }
+                    }
+            }
+
+            return new { };
+        }
+
+        public dynamic RegisterDevice(string type, RegisterSingleDevicesInfo info)
+        {
+            return RestHandler("POST", string.Format(Device, type), info, true);
+        }
+
+        public dynamic GetAllDevices()
+        {
+            return RestHandler("GET", BulkGet, null, true);
+        }
+    }
+}

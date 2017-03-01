@@ -1,0 +1,29 @@
+@using CloudantDotNet.Models
+@model List<DeviceList>
+
+@{
+    ViewBag.Title = "Application";
+}
+
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr>Class</tr>
+            <tr>Connected</tr>
+            <tr>Device</tr>
+            <tr>DeviceType</tr>
+        </thead>
+        <tbody>
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Class</td>
+                    <td>@item.Connected</td>
+                    <td>@item.Device</td>
+                    <td>@item.DeviceType</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
